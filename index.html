@@ -1,0 +1,773 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="color-scheme" content="dark">
+<title>Adesso vinco io</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=Barlow:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  color-scheme:dark;
+  --bg:#000000; --surface:#0F0F0F; --surface-2:#191919; --ink:#FFFFFF; --muted:#9B9B9B; --line:#2C2C2C;
+  --acc:#A6B91E; --acc-ink:#000000;
+  --hit:#2FD27A; --hit-bg:#0F3322; --hit-ink:#86EDB5;
+  --miss:#FF6B62; --miss-bg:#3A1917; --miss-ink:#FFA9A3;
+  --pend:#3B3B3B;
+  --display:'Barlow Condensed','Arial Narrow',Arial,sans-serif;
+  --body:'Barlow',system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;
+  box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px);
+  padding-bottom:env(safe-area-inset-bottom,0px);
+}
+*,*::before,*::after{box-sizing:inherit}
+html{background:#000;scroll-padding-top:calc(env(safe-area-inset-top,0px) + 130px)}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--body);font-size:16px;line-height:1.45;-webkit-text-size-adjust:100%}
+button,input,select,textarea{font:inherit;color:inherit}
+button{cursor:pointer;position:relative;overflow:hidden;-webkit-tap-highlight-color:transparent;transition:transform .12s ease}
+button:active{transform:scale(.95)}
+:focus-visible{outline:3px solid var(--acc);outline-offset:2px}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+
+/* effetto onda sui pulsanti */
+.rip{position:absolute;border-radius:50%;pointer-events:none;background:currentColor;opacity:.3;transform:scale(0);animation:rip .55s ease-out forwards}
+
+.wrap{max-width:640px;margin:0 auto;padding:0 14px 48px}
+
+/* barra fissa */
+.bar{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:var(--bg);padding:14px 0 10px;border-bottom:1px solid var(--acc);transition:border-color .4s,box-shadow .4s}
+.bar.won{border-bottom-color:var(--hit);box-shadow:0 10px 34px -12px rgba(47,210,122,.7)}
+.bar-top{display:flex;align-items:baseline;justify-content:space-between;gap:6px 12px;margin-bottom:10px;flex-wrap:wrap}
+h1{font-family:var(--display);font-weight:700;font-size:34px;line-height:1;margin:0;letter-spacing:.005em}
+.tally{display:flex;gap:12px;font-family:var(--display);font-weight:600;font-size:18px}
+.tally span{display:inline-flex;align-items:center;gap:6px}
+.dot{width:10px;height:10px;border-radius:50%;background:var(--pend)}
+.dot.h{background:var(--hit)} .dot.m{background:var(--miss)}
+.segs{display:flex;gap:8px;height:14px}
+.grp{display:flex;gap:2px;min-width:8px}
+.seg{flex:1;border-radius:3px;background:var(--pend);transition:background .3s}
+.seg.h{background:var(--hit)} .seg.m{background:var(--miss)} .seg.e{opacity:.45}
+.bar-bot{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-top:8px;min-height:24px}
+.status{font-size:15px;color:var(--muted);font-weight:500}
+.bar.won .status{color:var(--hit);font-weight:600}
+.bar-tools{display:flex;gap:10px}
+.linkbtn{border:0;background:transparent;color:var(--muted);font-size:14px;padding:4px 2px;text-decoration:underline;text-underline-offset:3px}
+.linkbtn:hover{color:var(--acc)}
+
+/* lista tendine */
+.list{display:grid;gap:10px;margin-top:14px}
+.empty{background:var(--surface);border:1px dashed var(--pend);border-radius:12px;padding:22px 18px;color:var(--muted)}
+.empty strong{display:block;color:var(--ink);font-family:var(--display);font-size:22px;font-weight:600;margin-bottom:4px}
+
+.card{background:var(--surface);border:1px solid var(--line);border-radius:14px;overflow:hidden;position:relative;transition:border-color .3s}
+.card.ok{border-color:var(--hit)}
+.card.ko{border-color:var(--miss)}
+.pill{width:100%;display:flex;align-items:center;gap:10px;padding:10px 14px;min-height:62px;border:0;background:transparent;text-align:left;color:var(--ink);transition:background .35s,color .35s,transform .12s}
+.pill:active{transform:scale(.985)}
+.pill-main{flex:1;min-width:0;display:flex;flex-direction:column;gap:1px}
+.teams{font-family:var(--display);font-weight:700;font-size:22px;line-height:1.1;overflow-wrap:anywhere}
+.sub{font-size:14px;color:var(--muted);font-weight:500}
+.sub:empty{display:none}
+.pdots{display:flex;gap:4px;flex-wrap:wrap;justify-content:flex-end;max-width:90px}
+.pd{width:10px;height:10px;border-radius:3px;background:var(--pend);transition:background .3s}
+.pd.h{background:var(--hit)} .pd.m{background:var(--miss)}
+.count{font-family:var(--display);font-weight:700;font-size:20px;color:var(--acc);min-width:34px;text-align:right}
+.badge{flex:none;width:30px;height:30px;border-radius:50%;display:grid;place-items:center}
+.badge svg{width:18px;height:18px}
+.chev{flex:none;width:22px;height:22px;color:var(--muted);transition:transform .32s ease}
+.card.open .chev{transform:rotate(180deg)}
+
+/* tendina vinta / persa */
+.card.ok .pill{background:linear-gradient(120deg,#1B9556,#2FD27A);color:#04210F}
+.card.ok .sub,.card.ok .count,.card.ok .chev{color:#04210F}
+.card.ok .badge{background:#04210F;color:var(--hit)}
+.card.ko .pill{background:linear-gradient(120deg,#D13F37,#FF6B62);color:#2B0705}
+.card.ko .sub,.card.ko .count,.card.ko .chev{color:#2B0705}
+.card.ko .badge{background:#2B0705;color:var(--miss)}
+
+/* apertura a tendina */
+.drawer{display:grid;grid-template-rows:0fr;transition:grid-template-rows .32s ease}
+.card.open .drawer{grid-template-rows:1fr}
+.drawer-in{min-height:0;overflow:hidden;visibility:hidden;transition:visibility 0s .32s}
+.card.open .drawer-in{visibility:visible;transition-delay:0s;border-top:1px solid var(--line)}
+.drawer-pad{padding-top:10px}
+.note{display:block;width:calc(100% - 28px);margin:0 14px 10px;padding:8px 10px;border:1px solid var(--line);border-radius:8px;background:var(--surface-2);font-size:15px}
+.note::placeholder{color:var(--muted)}
+
+.bets{list-style:none;margin:0;padding:0 8px 4px;display:grid;gap:8px}
+.bet{padding:6px 6px 6px 10px;border-radius:10px;background:var(--surface-2);border:1px solid transparent;transition:background .25s,border-color .25s}
+.bet.h{background:var(--hit-bg);border-color:var(--hit)}
+.bet.m{background:var(--miss-bg);border-color:var(--miss)}
+.bet-row{display:flex;align-items:center;gap:8px}
+.lbl{flex:1;font-weight:500;font-size:17px;overflow-wrap:anywhere}
+.bet.h .lbl{color:var(--hit-ink);font-weight:600}
+.bet.m .lbl{color:var(--miss-ink);text-decoration:line-through}
+.ctl{display:flex;gap:6px;align-items:center}
+.btn{width:46px;height:46px;border-radius:12px;border:2px solid var(--pend);background:#000;display:grid;place-items:center;color:var(--muted);transition:background .18s,border-color .18s,color .18s,transform .12s}
+.btn:active{transform:scale(.88)}
+.btn svg{width:22px;height:22px}
+.btn.h[aria-pressed="true"]{background:var(--hit);border-color:var(--hit);color:#000}
+.btn.m[aria-pressed="true"]{background:var(--miss);border-color:var(--miss);color:#000}
+.btn.h:hover{border-color:var(--hit);color:var(--hit)} .btn.m:hover{border-color:var(--miss);color:var(--miss)}
+.btn[aria-pressed="true"]:hover{color:#000}
+.btn.fx svg path{stroke-dasharray:1;stroke-dashoffset:1;animation:draw .4s .08s ease-out forwards}
+.rm{width:30px;height:30px;border:0;background:transparent;color:var(--muted);border-radius:6px;font-size:20px;line-height:1}
+.rm:hover{color:var(--miss)}
+
+/* contatore */
+.ctr{margin:8px 4px 6px 0;padding:10px;border-radius:10px;background:#000;border:1px solid var(--line)}
+.ctr-head{display:flex;justify-content:space-between;align-items:baseline;gap:8px}
+.ctr-num{font-family:var(--display);font-weight:700;font-size:26px;line-height:1;color:var(--acc);display:inline-block;transform-origin:left center}
+.ctr-num small{font-size:17px;font-weight:600;color:var(--ink);margin-left:4px}
+.ctr-num em{font-style:normal;font-size:15px;color:var(--muted);margin-left:2px}
+.ctr-num.bump{animation:numbump .38s cubic-bezier(.2,1.6,.4,1)}
+.warnlim{font-size:14px;font-weight:600;color:var(--miss-ink)}
+.bet.h .ctr-num{color:var(--hit)} .bet.m .ctr-num{color:var(--miss)}
+.ctr-body{display:flex;align-items:center;gap:10px;margin-top:8px}
+.cbtn{flex:none;width:48px;height:48px;border-radius:12px;border:2px solid var(--acc);background:transparent;color:var(--acc);font-family:var(--display);font-size:30px;font-weight:600;line-height:1;display:grid;place-items:center;padding:0}
+.cbtn:active{transform:scale(.88)}
+.cbtn.plus{background:var(--acc);color:var(--acc-ink)}
+.blocks{flex:1;display:flex;gap:3px;height:24px}
+.blk{flex:1;border-radius:3px;background:#262626;transition:background .2s}
+.blk.on{background:var(--acc)}
+.blk.new{animation:blkpop .55s ease-out}
+.bet.h .blk.on{background:var(--hit)}
+.bet.m .blk.on{background:var(--miss)}
+.track{flex:1;height:24px;border-radius:4px;background:#262626;overflow:hidden}
+.fill{height:100%;background:var(--acc);transition:width .3s}
+.bet.h .fill{background:var(--hit)} .bet.m .fill{background:var(--miss)}
+.addctr{margin:2px 0 0}
+
+/* editor contatore */
+.ed{margin:8px 4px 6px 0;padding:10px;border-radius:10px;background:#000;border:1px solid var(--acc);display:grid;gap:8px}
+.ed-row{display:flex;gap:8px}
+.ed-act{display:flex;gap:8px;flex-wrap:wrap}
+
+.addbet{display:flex;gap:8px;padding:8px 14px 10px}
+.addbet input,.field,select.field{flex:1;min-width:0;padding:10px 11px;border:1px solid var(--line);border-radius:8px;background:var(--surface-2)}
+.addbet input::placeholder,.field::placeholder{color:var(--muted)}
+.primary{padding:10px 16px;border-radius:10px;border:0;background:var(--acc);color:var(--acc-ink);font-weight:600}
+.ghost{padding:8px 12px;border-radius:10px;border:1px solid var(--pend);background:transparent;color:var(--muted);font-size:14px}
+.ghost:hover{color:var(--ink);border-color:var(--ink)}
+.ghost.danger{color:var(--miss-ink);border-color:var(--miss)}
+.toggle[aria-pressed="true"]{color:var(--acc);border-color:var(--acc)}
+.card-foot{display:flex;justify-content:flex-end;padding:0 14px 12px}
+
+/* aggiungi partita */
+.panel{margin-top:18px;background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:14px}
+.panel h2{font-family:var(--display);font-weight:700;font-size:22px;margin:0 0 10px}
+.row{display:flex;gap:8px;margin-bottom:8px}
+.panel .primary{width:100%;margin-top:2px}
+details{margin-top:14px;border-top:1px solid var(--line);padding-top:12px}
+summary{cursor:pointer;font-weight:600;color:var(--acc)}
+textarea.field{display:block;width:100%;min-height:150px;margin:10px 0 8px;resize:vertical;font-size:15px}
+.hint{color:var(--muted);font-size:14px;margin:8px 0 0}
+.opts{display:flex;flex-wrap:wrap;gap:8px;margin-top:18px}
+.tools-row{display:flex;flex-wrap:wrap;gap:8px;justify-content:space-between;margin-top:12px}
+
+/* animazioni di vittoria / sconfitta */
+.bet.fx-hit{animation:betpop .5s cubic-bezier(.2,1.5,.4,1),betflash .9s ease-out}
+.bet.fx-miss{animation:shake .45s ease-out}
+.card.fx-win{animation:cardpop .6s cubic-bezier(.2,1.4,.4,1),ring 1s ease-out}
+.card.fx-win .pill::after{content:'';position:absolute;inset:0;background:linear-gradient(110deg,transparent 30%,rgba(255,255,255,.75) 50%,transparent 70%);transform:translateX(-130%);animation:sweep .95s .1s ease-out forwards;pointer-events:none}
+.card.fx-lose{animation:shake .5s ease-out,ringred .9s ease-out}
+
+/* schermata schedina vinta */
+.win{position:fixed;inset:0;z-index:40;display:grid;place-items:center;padding:24px;background:radial-gradient(circle at 50% 42%,rgba(166,185,30,.38),rgba(0,0,0,.92) 66%);opacity:0;visibility:hidden;transition:opacity .35s,visibility 0s .35s}
+.win.show{opacity:1;visibility:visible;transition-delay:0s}
+.win-card{text-align:center;max-width:420px}
+.win.show .win-card{animation:winin .75s cubic-bezier(.2,1.4,.4,1) both}
+.win-ico{width:110px;height:110px;color:var(--acc);margin-bottom:6px}
+.win-ico circle,.win-ico path{stroke-dasharray:1;stroke-dashoffset:1}
+.win.show .win-ico circle{animation:draw .8s .15s ease-out forwards}
+.win.show .win-ico path{animation:draw .5s .85s ease-out forwards}
+.win h2{font-family:var(--display);font-weight:700;font-size:clamp(54px,17vw,96px);line-height:.95;margin:0 0 10px;color:#fff;text-shadow:0 0 28px rgba(166,185,30,.75)}
+.win p{margin:0 0 18px;font-size:18px;color:var(--ink)}
+#fx{position:fixed;inset:0;width:100%;height:100%;z-index:60;pointer-events:none}
+
+@keyframes rip{to{transform:scale(1);opacity:0}}
+@keyframes draw{from{stroke-dashoffset:1}to{stroke-dashoffset:0}}
+@keyframes betpop{0%{transform:scale(1)}35%{transform:scale(1.045)}100%{transform:scale(1)}}
+@keyframes betflash{0%{background:var(--acc);border-color:var(--acc)}100%{background:var(--hit-bg);border-color:var(--hit)}}
+@keyframes shake{0%,100%{transform:translateX(0)}20%{transform:translateX(-7px)}40%{transform:translateX(6px)}60%{transform:translateX(-4px)}80%{transform:translateX(3px)}}
+@keyframes sweep{to{transform:translateX(130%)}}
+@keyframes ring{0%{box-shadow:0 0 0 0 rgba(47,210,122,.8)}100%{box-shadow:0 0 0 20px rgba(47,210,122,0)}}
+@keyframes ringred{0%{box-shadow:0 0 0 0 rgba(255,107,98,.8)}100%{box-shadow:0 0 0 18px rgba(255,107,98,0)}}
+@keyframes cardpop{0%{transform:scale(1)}30%{transform:scale(1.035)}100%{transform:scale(1)}}
+@keyframes numbump{0%{transform:scale(1)}40%{transform:scale(1.4)}100%{transform:scale(1)}}
+@keyframes blkpop{0%{transform:scaleY(1);box-shadow:0 0 0 0 rgba(166,185,30,.9)}40%{transform:scaleY(1.7)}100%{transform:scaleY(1);box-shadow:0 0 0 9px rgba(166,185,30,0)}}
+@keyframes winin{0%{transform:scale(.5);opacity:0}100%{transform:scale(1);opacity:1}}
+
+@media (prefers-reduced-motion:reduce){
+  *,*::before,*::after{animation:none!important;transition:none!important}
+  .btn.fx svg path,.win-ico circle,.win-ico path{stroke-dashoffset:0}
+}
+@media (max-width:400px){h1{font-size:30px}.btn{width:42px;height:42px}.teams{font-size:21px}.pdots{max-width:70px}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="bar" id="bar">
+    <div class="bar-top">
+      <h1>Adesso vinco io</h1>
+      <div class="tally" aria-live="polite">
+        <span><i class="dot h"></i><b id="nH">0</b> prese</span>
+        <span><i class="dot m"></i><b id="nM">0</b> mancate</span>
+        <span><i class="dot"></i><b id="nP">0</b> in corso</span>
+      </div>
+    </div>
+    <div class="segs" id="segs" aria-hidden="true"></div>
+    <div class="bar-bot">
+      <span class="status" id="status"></span>
+      <span class="bar-tools">
+        <button class="linkbtn" id="openAll">Apri tutte</button>
+        <button class="linkbtn" id="closeAll">Chiudi tutte</button>
+      </span>
+    </div>
+  </div>
+
+  <div class="list" id="list"></div>
+
+  <section class="panel">
+    <h2>Aggiungi una partita</h2>
+    <div class="row">
+      <input class="field" id="home" placeholder="Squadra di casa" autocomplete="off">
+      <input class="field" id="away" placeholder="Squadra ospite" autocomplete="off">
+    </div>
+    <div class="row">
+      <input class="field" id="betsIn" list="betlist" placeholder="Giocate, separate da virgola (es. 1, Over 1.5)" autocomplete="off">
+    </div>
+    <button class="primary" id="addMatch">Aggiungi partita</button>
+
+    <details>
+      <summary>Inserisci tutte le partite insieme</summary>
+      <textarea class="field" id="bulk" placeholder="Inter - Milan: 1, Over 1.5&#10;Roma - Lazio: X2, Goal&#10;Juventus - Napoli: Under 3.5"></textarea>
+      <button class="primary" id="addBulk">Aggiungi le partite</button>
+      <p class="hint">Una partita per riga: squadre separate da " - ", poi due punti e le giocate separate da virgola. Le giocate Over e Under ricevono da sole un contatore.</p>
+    </details>
+  </section>
+
+  <div class="opts">
+    <button class="ghost toggle" id="tSound" aria-pressed="false">Suoni e vibrazione: no</button>
+    <button class="ghost toggle" id="tWake" aria-pressed="false">Schermo sempre acceso: no</button>
+  </div>
+  <p class="hint" id="wakeNote"></p>
+
+  <div class="tools-row">
+    <button class="ghost" id="resetStatus">Azzera esiti e contatori</button>
+    <button class="ghost" id="clearAll">Svuota la schedina</button>
+  </div>
+</div>
+
+<div class="win" id="win" aria-hidden="true">
+  <div class="win-card">
+    <svg class="win-ico" viewBox="0 0 120 120" aria-hidden="true">
+      <circle cx="60" cy="60" r="52" fill="none" stroke="currentColor" stroke-width="6" pathLength="1"/>
+      <path d="M36 62l16 16 32-34" fill="none" stroke="currentColor" stroke-width="8" stroke-linecap="round" stroke-linejoin="round" pathLength="1"/>
+    </svg>
+    <h2>Schedina vinta</h2>
+    <p id="winSub"></p>
+    <button class="primary" id="winClose">Continua</button>
+  </div>
+</div>
+<canvas id="fx" aria-hidden="true"></canvas>
+
+<datalist id="betlist">
+  <option value="1"><option value="X"><option value="2"><option value="1X"><option value="X2"><option value="12">
+  <option value="Over 0.5"><option value="Over 1.5"><option value="Over 2.5"><option value="Over 3.5">
+  <option value="Under 1.5"><option value="Under 2.5"><option value="Under 3.5">
+  <option value="Goal"><option value="NoGoal"><option value="Multigol 1-3"><option value="Multigol 2-4">
+  <option value="Over 8.5 angoli"><option value="Over 9.5 angoli"><option value="Over 3.5 cartellini">
+</datalist>
+
+<script>
+(function(){
+  var KEY='schedina-tracker-v1', PKEY='schedina-prefs-v1';
+  var CHECK='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path pathLength="1" d="M5 12.5l4.5 4.5L19 7.5"/></svg>';
+  var CROSS='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><path pathLength="1" d="M6 6l12 12"/><path pathLength="1" d="M18 6L6 18"/></svg>';
+  var CHEV='<svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg>';
+  var RM=false; try{RM=window.matchMedia('(prefers-reduced-motion: reduce)').matches;}catch(e){}
+  var state=load(), prefs=loadPrefs();
+  var confirmKey=null, editKey=null, prev=null;
+
+  /* ---------- dati ---------- */
+  function autoCounter(l){
+    var m=String(l).match(/\b(over|under)\s*(\d+(?:[.,]\d+)?)/i);
+    if(!m) return null;
+    var x=parseFloat(m[2].replace(',','.')), over=m[1].toLowerCase()==='over';
+    var unit=/angol|corner/i.test(l)?'angoli':(/cart|giall|ammon/i.test(l)?'cartellini':'goal');
+    var t=over?Math.floor(x)+1:Math.ceil(x)-1;
+    return {mode:over?'over':'under',target:Math.max(over?1:0,t),cur:0,u:unit};
+  }
+  function load(){
+    var o={matches:[]};
+    try{var s=localStorage.getItem(KEY); if(s){var p=JSON.parse(s); if(p&&Array.isArray(p.matches)) o=p;}}catch(e){}
+    o.matches.forEach(function(m){ m.bets.forEach(function(b){ if(!('c' in b)) b.c=autoCounter(b.l); }); });
+    return o;
+  }
+  function save(){ try{localStorage.setItem(KEY,JSON.stringify(state));}catch(e){} }
+  function loadPrefs(){
+    var p={sound:false,wake:false};
+    try{var s=localStorage.getItem(PKEY); if(s){var o=JSON.parse(s); p.sound=!!o.sound; p.wake=!!o.wake;}}catch(e){}
+    return p;
+  }
+  function savePrefs(){ try{localStorage.setItem(PKEY,JSON.stringify(prefs));}catch(e){} }
+  function uid(){return Math.random().toString(36).slice(2,9);}
+  function esc(s){return String(s).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];});}
+  function $(id){return document.getElementById(id);}
+  function parseBets(t){
+    return String(t||'').split(/[,;]/).map(function(x){return x.trim();}).filter(Boolean).map(function(l){return {id:uid(),l:l,s:'p',c:autoCounter(l)};});
+  }
+  function applyCounter(b){
+    var c=b.c; if(!c) return;
+    if(c.mode==='over'){ if(c.cur>=c.target) b.s='h'; else if(b.s==='h') b.s='p'; }
+    else { if(c.cur>c.target) b.s='m'; else if(b.s==='m') b.s='p'; }
+  }
+  function matchState(m){
+    var hn=m.bets.filter(function(b){return b.s==='h';}).length;
+    var mn=m.bets.filter(function(b){return b.s==='m';}).length;
+    return mn?'ko':(m.bets.length&&hn===m.bets.length?'ok':'');
+  }
+  function slipWon(){ return state.matches.length>0 && state.matches.every(function(m){return matchState(m)==='ok';}); }
+  function snap(){
+    var s={bets:{},cur:{},matches:{},slip:slipWon()};
+    state.matches.forEach(function(m){ s.matches[m.id]=matchState(m); m.bets.forEach(function(b){ s.bets[b.id]=b.s; s.cur[b.id]=b.c?b.c.cur:null; }); });
+    return s;
+  }
+
+  /* ---------- disegno ---------- */
+  function render(){
+    // ricordo quale pulsante ha il focus
+    var fk=null, ae=document.activeElement;
+    if(ae && ae.tagName==='BUTTON' && $('list').contains(ae)){
+      var cc=ae.closest('.card'); fk={m:cc&&cc.dataset.m,a:ae.dataset.a,b:ae.dataset.b,v:ae.dataset.v};
+    }
+
+    var all=[]; state.matches.forEach(function(m){all=all.concat(m.bets);});
+    var h=all.filter(function(b){return b.s==='h';}).length;
+    var x=all.filter(function(b){return b.s==='m';}).length;
+    $('nH').textContent=h; $('nM').textContent=x; $('nP').textContent=all.length-h-x;
+
+    $('segs').innerHTML=state.matches.map(function(m){
+      var bets=m.bets.length?m.bets:[{s:'e'}];
+      return '<div class="grp" style="flex:'+bets.length+'">'+bets.map(function(b){return '<i class="seg '+b.s+'"></i>';}).join('')+'</div>';
+    }).join('');
+
+    var won=state.matches.filter(function(m){return matchState(m)==='ok';}).length;
+    var lost=state.matches.filter(function(m){return matchState(m)==='ko';}).length;
+    var st='';
+    if(state.matches.length){
+      st = slipWon() ? 'Schedina vinta' : (won+(won===1?' partita vinta':' partite vinte')+' su '+state.matches.length+(lost?', '+lost+(lost===1?' persa':' perse'):''));
+    }
+    $('status').textContent=st;
+    $('bar').classList.toggle('won',slipWon());
+
+    var list=$('list');
+    if(!state.matches.length){
+      list.innerHTML='<div class="empty"><strong>Nessuna partita in schedina</strong>Aggiungi le tue partite qui sotto, una alla volta o tutte insieme. Ogni partita diventa una tendina: toccala per vedere le giocate.</div>';
+    } else {
+      list.innerHTML=state.matches.map(cardHtml).join('');
+    }
+    $('clearAll').textContent = confirmKey==='all' ? 'Confermi? Tocca ancora' : 'Svuota la schedina';
+    $('clearAll').className = 'ghost'+(confirmKey==='all'?' danger':'');
+
+    if(fk){
+      var sel='.card[data-m="'+fk.m+'"] [data-a="'+fk.a+'"]'+(fk.b?'[data-b="'+fk.b+'"]':'')+(fk.v?'[data-v="'+fk.v+'"]':'');
+      var el=document.querySelector(sel); if(el) try{el.focus({preventScroll:true});}catch(e){}
+    }
+
+    var now=snap();
+    if(prev) runFx(prev,now);
+    prev=now;
+  }
+
+  function counterHtml(b){
+    var c=b.c, unit=esc(c.u||'');
+    var over=c.mode==='over';
+    var cap=over?c.target:Math.max(c.target,1);
+    var filled=Math.min(c.cur,cap);
+    var bar;
+    if(cap<=20){
+      var blocks=''; for(var i=0;i<cap;i++) blocks+='<i class="blk'+(i<filled?' on':'')+'"></i>';
+      bar='<div class="blocks" aria-hidden="true">'+blocks+'</div>';
+    } else {
+      bar='<div class="track" aria-hidden="true"><div class="fill" style="width:'+Math.round(filled/cap*100)+'%"></div></div>';
+    }
+    var num = over
+      ? c.cur+' / '+c.target+'<small>'+unit+'</small>'
+      : c.cur+'<em> / max '+c.target+'</em><small>'+unit+'</small>';
+    var warn = (!over && c.cur===c.target && b.s!=='m') ? '<span class="warnlim">Al limite</span>' : '';
+    return '<div class="ctr">'+
+      '<div class="ctr-head"><div class="ctr-num" aria-live="polite">'+num+'</div>'+warn+'<button class="linkbtn" data-a="editC" data-b="'+b.id+'">Modifica</button></div>'+
+      '<div class="ctr-body">'+
+        '<button class="cbtn" data-a="dec" data-b="'+b.id+'" aria-label="Uno in meno: '+esc(b.l)+'">&minus;</button>'+
+        bar+
+        '<button class="cbtn plus" data-a="inc" data-b="'+b.id+'" aria-label="Uno in più: '+esc(b.l)+'">+</button>'+
+      '</div></div>';
+  }
+  function editorHtml(b){
+    var c=b.c||{mode:'over',target:'',cur:0,u:'goal'};
+    return '<div class="ed">'+
+      '<div class="ed-row">'+
+        '<select class="field" data-f="mode" aria-label="Tipo di conteggio">'+
+          '<option value="over"'+(c.mode==='over'?' selected':'')+'>Almeno</option>'+
+          '<option value="under"'+(c.mode==='under'?' selected':'')+'>Al massimo</option>'+
+        '</select>'+
+        '<input class="field" data-f="target" type="number" inputmode="numeric" min="0" placeholder="Quanti" value="'+esc(c.target)+'" aria-label="Traguardo">'+
+      '</div>'+
+      '<input class="field" data-f="unit" placeholder="Cosa conti (goal, angoli, cartellini)" value="'+esc(c.u||'')+'" aria-label="Cosa conti">'+
+      '<div class="ed-act">'+
+        '<button class="primary" data-a="saveC" data-b="'+b.id+'">Salva</button>'+
+        '<button class="ghost" data-a="cancelC">Annulla</button>'+
+        (b.c?'<button class="ghost" data-a="rmC" data-b="'+b.id+'">Togli il conteggio</button>':'')+
+      '</div></div>';
+  }
+
+  function cardHtml(m){
+    var hn=m.bets.filter(function(b){return b.s==='h';}).length;
+    var st=matchState(m);
+    var title=esc(m.home)+(m.away?' – '+esc(m.away):'');
+    var right;
+    if(st==='ok') right='<span class="badge">'+CHECK+'</span><span class="sr">Partita vinta</span>';
+    else if(st==='ko') right='<span class="badge">'+CROSS+'</span><span class="sr">Partita persa</span>';
+    else right='<span class="pdots" aria-hidden="true">'+m.bets.map(function(b){return '<i class="pd '+b.s+'"></i>';}).join('')+'</span>';
+
+    var bets=m.bets.map(function(b){
+      var extra;
+      if(editKey===b.id) extra=editorHtml(b);
+      else if(b.c) extra=counterHtml(b);
+      else extra='<div class="addctr"><button class="linkbtn" data-a="editC" data-b="'+b.id+'">+ Conteggio</button></div>';
+      return '<li class="bet '+b.s+'" data-bet="'+b.id+'">'+
+        '<div class="bet-row">'+
+          '<span class="lbl">'+esc(b.l)+'</span>'+
+          '<div class="ctl">'+
+            '<button class="btn h" data-a="set" data-b="'+b.id+'" data-v="h" aria-pressed="'+(b.s==='h')+'" aria-label="Giocata presa: '+esc(b.l)+'">'+CHECK+'</button>'+
+            '<button class="btn m" data-a="set" data-b="'+b.id+'" data-v="m" aria-pressed="'+(b.s==='m')+'" aria-label="Giocata mancata: '+esc(b.l)+'">'+CROSS+'</button>'+
+            '<button class="rm" data-a="delb" data-b="'+b.id+'" aria-label="Rimuovi giocata '+esc(b.l)+'">&minus;</button>'+
+          '</div>'+
+        '</div>'+extra+'</li>';
+    }).join('');
+    var del = confirmKey===m.id
+      ? '<button class="ghost danger" data-a="delm">Confermi? Tocca ancora</button>'
+      : '<button class="ghost" data-a="delm">Elimina partita</button>';
+    return '<article class="card '+st+(m.open?' open':'')+'" data-m="'+m.id+'">'+
+      '<button class="pill" data-a="toggle" aria-expanded="'+(!!m.open)+'" aria-controls="d-'+m.id+'">'+
+        '<span class="pill-main"><span class="teams">'+title+'</span><span class="sub">'+esc(m.note||'')+'</span></span>'+
+        right+
+        '<span class="count">'+hn+'/'+m.bets.length+'</span>'+CHEV+
+      '</button>'+
+      '<div class="drawer" id="d-'+m.id+'"><div class="drawer-in"><div class="drawer-pad">'+
+        '<input class="note" data-a="note" placeholder="Risultato o minuto (es. 1-0, 34&#39;)" value="'+esc(m.note||'')+'">'+
+        '<ul class="bets">'+bets+'</ul>'+
+        '<div class="addbet"><input data-a="newbet" list="betlist" placeholder="Aggiungi una giocata" autocomplete="off"><button class="primary" data-a="addb">Aggiungi</button></div>'+
+        '<div class="card-foot">'+del+'</div>'+
+      '</div></div></div>'+
+    '</article>';
+  }
+
+  function findMatch(el){
+    var c=el.closest('.card'); if(!c) return null;
+    return state.matches.filter(function(m){return m.id===c.dataset.m;})[0]||null;
+  }
+  function findBet(m,id){ return m.bets.filter(function(b){return b.id===id;})[0]||null; }
+
+  /* ---------- effetti: particelle ---------- */
+  var cv=$('fx'), ctx=cv.getContext('2d'), W=0, H=0, parts=[], raf=null, last=0;
+  var COLORS=['#A6B91E','#FFFFFF','#2FD27A','#C9DC3A'];
+  function fit(){
+    var d=Math.min(2,window.devicePixelRatio||1); W=window.innerWidth; H=window.innerHeight;
+    cv.width=W*d; cv.height=H*d; ctx.setTransform(d,0,0,d,0,0);
+  }
+  window.addEventListener('resize',fit); fit();
+  function rnd(a,b){return a+Math.random()*(b-a);}
+  function emit(x,y,n,o){
+    if(RM) return;
+    for(var i=0;i<n;i++){
+      var ang=((o.angle||0)+(Math.random()-.5)*(o.spread||360))*Math.PI/180;
+      var sp=rnd(.45,1)*(o.speed||6);
+      parts.push({x:x+(o.jx?rnd(-o.jx,o.jx):0),y:y,vx:Math.cos(ang)*sp,vy:Math.sin(ang)*sp,g:o.g==null?.22:o.g,drag:o.drag||.985,
+        life:rnd(.7,1)*(o.life||60),max:o.life||60,size:rnd(.7,1.3)*(o.size||7),rot:rnd(0,6.28),vr:rnd(-.3,.3),
+        color:COLORS[(Math.random()*COLORS.length)|0],shape:o.shape||'rect',delay:o.delay?rnd(0,o.delay):0});
+    }
+    if(!raf){ last=performance.now(); raf=requestAnimationFrame(frame); }
+  }
+  function frame(t){
+    var dt=Math.min(3,(t-last)/16.667); last=t;
+    ctx.clearRect(0,0,W,H);
+    parts=parts.filter(function(p){
+      if(p.delay>0){p.delay-=dt;return true;}
+      p.life-=dt; if(p.life<=0||p.y>H+40) return false;
+      p.vy+=p.g*dt; var f=Math.pow(p.drag,dt); p.vx*=f; p.vy*=f;
+      p.x+=p.vx*dt; p.y+=p.vy*dt; p.rot+=p.vr*dt;
+      ctx.globalAlpha=Math.min(1,p.life/(p.max*.3));
+      ctx.fillStyle=p.color; ctx.save(); ctx.translate(p.x,p.y); ctx.rotate(p.rot);
+      if(p.shape==='dot'){ ctx.beginPath(); ctx.arc(0,0,p.size/2,0,6.283); ctx.fill(); }
+      else ctx.fillRect(-p.size/2,-p.size/4,p.size,p.size/2);
+      ctx.restore(); return true;
+    });
+    ctx.globalAlpha=1;
+    if(parts.length) raf=requestAnimationFrame(frame); else { raf=null; ctx.clearRect(0,0,W,H); }
+  }
+  function center(el){
+    var r=el.getBoundingClientRect();
+    if(!r.width&&!r.height) return null;
+    return {x:r.left+r.width/2,y:r.top+r.height/2};
+  }
+  function burst(el,big){
+    var c=el&&center(el); if(!c) return;
+    if(big) emit(c.x,c.y,48,{angle:-90,spread:200,speed:11,g:.28,life:70,size:8,jx:30});
+    else emit(c.x,c.y,16,{spread:360,speed:5.5,g:.2,life:34,size:5.5,shape:'dot'});
+  }
+  function celebrate(){
+    emit(0,H,90,{angle:-60,spread:40,speed:20,g:.3,life:110,size:9});
+    emit(W,H,90,{angle:-120,spread:40,speed:20,g:.3,life:110,size:9});
+    setTimeout(function(){ emit(W/2,-10,130,{angle:90,spread:30,speed:3,g:.08,life:200,size:9,jx:W/2,delay:90}); },350);
+  }
+
+  /* ---------- suoni e vibrazione ---------- */
+  var ac=null;
+  function audio(){
+    if(!ac){ try{ac=new (window.AudioContext||window.webkitAudioContext)();}catch(e){} }
+    if(ac&&ac.state==='suspended'){ try{ac.resume();}catch(e){} }
+    return ac;
+  }
+  function note(f,t,d,type,v){
+    var a=audio(); if(!a) return;
+    var o=a.createOscillator(), g=a.createGain(), s=a.currentTime+t;
+    o.type=type||'sine'; o.frequency.value=f;
+    g.gain.setValueAtTime(.0001,s); g.gain.exponentialRampToValueAtTime(v||.14,s+.02); g.gain.exponentialRampToValueAtTime(.0001,s+d);
+    o.connect(g); g.connect(a.destination); o.start(s); o.stop(s+d+.05);
+  }
+  function sfx(k){
+    if(!prefs.sound) return;
+    if(k==='hit'){ note(660,0,.16,'triangle'); note(880,.09,.22,'triangle'); }
+    else if(k==='match'){ [523,659,784,1047].forEach(function(f,i){ note(f,i*.09,.28,'triangle',.16); }); }
+    else if(k==='slip'){ [523,659,784,1047,784,1047,1319].forEach(function(f,i){ note(f,i*.11,.4,'triangle',.18); }); }
+    else if(k==='miss'){ note(220,0,.2,'sawtooth',.09); note(165,.12,.3,'sawtooth',.09); }
+  }
+  function buzz(p){ if(prefs.sound && navigator.vibrate){ try{navigator.vibrate(p);}catch(e){} } }
+
+  /* ---------- effetti: cosa è cambiato ---------- */
+  var winTimer=null;
+  function showWin(n){
+    $('winSub').textContent='Tutte le '+n+(n===1?' giocata è andata a segno.':' giocate sono andate a segno.');
+    var w=$('win'); w.classList.add('show'); w.setAttribute('aria-hidden','false');
+    clearTimeout(winTimer); winTimer=setTimeout(hideWin,7000);
+  }
+  function hideWin(){ var w=$('win'); w.classList.remove('show'); w.setAttribute('aria-hidden','true'); clearTimeout(winTimer); }
+  $('win').addEventListener('click',hideWin);
+  document.addEventListener('keydown',function(e){ if(e.key==='Escape') hideWin(); });
+
+  function betEl(id){ return document.querySelector('[data-bet="'+id+'"]'); }
+  function runFx(p,n){
+    var hits=[],miss=[],bumps=[],wins=[],loses=[],hitMatches={};
+    Object.keys(n.bets).forEach(function(id){
+      var o=p.bets[id]; if(o===undefined) return;
+      if(o!=='h'&&n.bets[id]==='h') hits.push(id);
+      if(o!=='m'&&n.bets[id]==='m') miss.push(id);
+      if(p.cur[id]!=null&&n.cur[id]!=null&&p.cur[id]!==n.cur[id]) bumps.push(id);
+    });
+    hits.forEach(function(id){ var li=betEl(id); if(li){ var c=li.closest('.card'); if(c) hitMatches[c.dataset.m]=1; } });
+    Object.keys(n.matches).forEach(function(id){
+      var o=p.matches[id]; if(o===undefined) return;
+      if(o!=='ok'&&n.matches[id]==='ok'&&hitMatches[id]) wins.push(id);
+      if(o!=='ko'&&n.matches[id]==='ko') loses.push(id);
+    });
+    var slipWin=n.slip&&!p.slip&&hits.length>0;
+
+    bumps.forEach(function(id){
+      var li=betEl(id); if(!li) return;
+      var num=li.querySelector('.ctr-num'); if(num) num.classList.add('bump');
+      if(n.cur[id]>p.cur[id]){
+        var bl=li.querySelectorAll('.blk'), nb=bl[n.cur[id]-1]; if(nb) nb.classList.add('new');
+      }
+    });
+    hits.forEach(function(id){
+      var li=betEl(id); if(!li) return;
+      li.classList.add('fx-hit');
+      var b=li.querySelector('.btn.h'); if(b) b.classList.add('fx');
+      burst(b||li,false);
+    });
+    miss.forEach(function(id){
+      var li=betEl(id); if(!li) return;
+      li.classList.add('fx-miss');
+      var b=li.querySelector('.btn.m'); if(b) b.classList.add('fx');
+    });
+    wins.forEach(function(id){
+      var c=document.querySelector('.card[data-m="'+id+'"]'); if(!c) return;
+      c.classList.add('fx-win');
+      if(!slipWin) burst(c.querySelector('.pill'),true);
+    });
+    loses.forEach(function(id){
+      var c=document.querySelector('.card[data-m="'+id+'"]'); if(c) c.classList.add('fx-lose');
+    });
+
+    if(slipWin){
+      var tot=0; state.matches.forEach(function(m){tot+=m.bets.length;});
+      sfx('slip'); buzz([60,50,60,50,160]); celebrate(); showWin(tot);
+    } else if(wins.length){ sfx('match'); buzz([30,40,30,40,90]); }
+    else if(hits.length){ sfx('hit'); buzz(25); }
+    else if(miss.length){ sfx('miss'); buzz(90); }
+  }
+
+  /* ---------- azioni ---------- */
+  function addBetFrom(card){
+    var m=findMatch(card), inp=card.querySelector('[data-a="newbet"]');
+    var bets=parseBets(inp.value);
+    if(!m||!bets.length) return;
+    m.bets=m.bets.concat(bets); m.open=true; save(); render();
+    var again=document.querySelector('.card[data-m="'+m.id+'"] [data-a="newbet"]');
+    if(again) again.focus();
+  }
+
+  $('list').addEventListener('click',function(e){
+    var t=e.target.closest('[data-a]'); if(!t) return;
+    var a=t.dataset.a, m=findMatch(t);
+    if(!m) return;
+    if(a==='toggle'){
+      var card=t.closest('.card'), open=!card.classList.contains('open');
+      card.classList.toggle('open',open); t.setAttribute('aria-expanded',String(open));
+      m.open=open; save(); return;
+    }
+    var b=t.dataset.b?findBet(m,t.dataset.b):null;
+    if(a==='set' && b){
+      b.s=(b.s===t.dataset.v)?'p':t.dataset.v; confirmKey=null; save(); render();
+    } else if(a==='delb' && b){
+      m.bets=m.bets.filter(function(x){return x.id!==b.id;}); if(editKey===b.id) editKey=null; save(); render();
+    } else if(a==='inc' && b && b.c){
+      b.c.cur++; applyCounter(b); save(); render();
+    } else if(a==='dec' && b && b.c){
+      b.c.cur=Math.max(0,b.c.cur-1); applyCounter(b); save(); render();
+    } else if(a==='editC' && b){
+      editKey=b.id; render();
+      var f=document.querySelector('.ed [data-f="target"]'); if(f) f.focus();
+    } else if(a==='cancelC'){
+      editKey=null; render();
+    } else if(a==='rmC' && b){
+      b.c=null; editKey=null; save(); render();
+    } else if(a==='saveC' && b){
+      var ed=t.closest('.ed');
+      var mode=ed.querySelector('[data-f="mode"]').value;
+      var target=parseInt(ed.querySelector('[data-f="target"]').value,10);
+      var unit=ed.querySelector('[data-f="unit"]').value.trim();
+      if(isNaN(target)||target<(mode==='over'?1:0)){ ed.querySelector('[data-f="target"]').focus(); return; }
+      b.c={mode:mode,target:target,cur:b.c?b.c.cur:0,u:unit};
+      editKey=null; applyCounter(b); save(); render();
+    } else if(a==='delm'){
+      if(confirmKey===m.id){ state.matches=state.matches.filter(function(x){return x.id!==m.id;}); confirmKey=null; save(); }
+      else { confirmKey=m.id; }
+      render();
+    } else if(a==='addb'){
+      addBetFrom(t.closest('.card'));
+    }
+  });
+  $('list').addEventListener('input',function(e){
+    if(e.target.dataset.a==='note'){
+      var m=findMatch(e.target); if(!m) return;
+      m.note=e.target.value; save();
+      var sub=e.target.closest('.card').querySelector('.sub'); if(sub) sub.textContent=e.target.value;
+    }
+  });
+  $('list').addEventListener('keydown',function(e){
+    if(e.key==='Enter' && e.target.dataset.a==='newbet'){ e.preventDefault(); addBetFrom(e.target.closest('.card')); }
+  });
+
+  function setAll(open){
+    state.matches.forEach(function(m){ m.open=open; });
+    document.querySelectorAll('.card').forEach(function(c){
+      c.classList.toggle('open',open);
+      var p=c.querySelector('.pill'); if(p) p.setAttribute('aria-expanded',String(open));
+    });
+    save();
+  }
+  $('openAll').addEventListener('click',function(){ setAll(true); });
+  $('closeAll').addEventListener('click',function(){ setAll(false); });
+
+  function addMatch(home,away,bets,open){
+    state.matches.push({id:uid(),home:home,away:away,note:'',bets:bets,open:!!open});
+  }
+  $('addMatch').addEventListener('click',function(){
+    var h=$('home').value.trim(), a=$('away').value.trim();
+    if(!h){ $('home').focus(); return; }
+    addMatch(h,a,parseBets($('betsIn').value),true);
+    $('home').value=''; $('away').value=''; $('betsIn').value='';
+    save(); render(); $('home').focus();
+  });
+  ['home','away','betsIn'].forEach(function(id){
+    $(id).addEventListener('keydown',function(e){ if(e.key==='Enter'){ e.preventDefault(); $('addMatch').click(); } });
+  });
+  $('addBulk').addEventListener('click',function(){
+    var lines=$('bulk').value.split(/\r?\n/), added=0;
+    lines.forEach(function(line){
+      line=line.trim(); if(!line) return;
+      var idx=line.search(/[:|]/), left=line, right='';
+      if(idx>-1){ left=line.slice(0,idx).trim(); right=line.slice(idx+1); }
+      var parts2=left.split(/\s+(?:-|–|—|vs|v)\s+/i);
+      var home=(parts2[0]||'').trim(), away=(parts2.slice(1).join(' - ')||'').trim();
+      if(!home) return;
+      addMatch(home,away,parseBets(right),false); added++;
+    });
+    if(added){ $('bulk').value=''; save(); render(); }
+  });
+
+  $('resetStatus').addEventListener('click',function(){
+    state.matches.forEach(function(m){ m.bets.forEach(function(b){ b.s='p'; if(b.c) b.c.cur=0; }); });
+    confirmKey=null; editKey=null; save(); render();
+  });
+  $('clearAll').addEventListener('click',function(){
+    if(confirmKey==='all'){ state.matches=[]; confirmKey=null; save(); }
+    else { confirmKey='all'; }
+    render();
+  });
+
+  /* ---------- opzioni ---------- */
+  var wl=null;
+  function wake(on){
+    if(!on){ if(wl){ try{wl.release();}catch(e){} wl=null; } return Promise.resolve(true); }
+    if(!('wakeLock' in navigator)) return Promise.resolve(false);
+    return navigator.wakeLock.request('screen').then(function(l){
+      wl=l; l.addEventListener('release',function(){ if(wl===l) wl=null; }); return true;
+    }).catch(function(){ return false; });
+  }
+  document.addEventListener('visibilitychange',function(){
+    if(prefs.wake && document.visibilityState==='visible' && !wl) wake(true);
+  });
+  function syncPrefs(){
+    $('tSound').setAttribute('aria-pressed',String(prefs.sound));
+    $('tSound').textContent='Suoni e vibrazione: '+(prefs.sound?'sì':'no');
+    $('tWake').setAttribute('aria-pressed',String(prefs.wake));
+    $('tWake').textContent='Schermo sempre acceso: '+(prefs.wake?'sì':'no');
+  }
+  $('tSound').addEventListener('click',function(){
+    prefs.sound=!prefs.sound; savePrefs(); syncPrefs();
+    if(prefs.sound){ sfx('hit'); buzz(25); }
+  });
+  $('tWake').addEventListener('click',function(){
+    if(!prefs.wake){
+      wake(true).then(function(ok){
+        prefs.wake=ok; $('wakeNote').textContent=ok?'':'Il blocco dello spegnimento schermo non è disponibile su questo dispositivo.';
+        savePrefs(); syncPrefs();
+      });
+    } else { prefs.wake=false; wake(false); $('wakeNote').textContent=''; savePrefs(); syncPrefs(); }
+  });
+  $('winClose').addEventListener('click',hideWin);
+
+  /* onda sui pulsanti */
+  document.addEventListener('pointerdown',function(e){
+    if(RM) return;
+    var b=e.target.closest&&e.target.closest('button'); if(!b||b.disabled) return;
+    var r=b.getBoundingClientRect(), s=Math.max(r.width,r.height)*2.2;
+    var i=document.createElement('span'); i.className='rip';
+    i.style.width=i.style.height=s+'px'; i.style.left=(e.clientX-r.left-s/2)+'px'; i.style.top=(e.clientY-r.top-s/2)+'px';
+    b.appendChild(i); setTimeout(function(){ if(i.parentNode) i.parentNode.removeChild(i); },600);
+  },{passive:true});
+
+  syncPrefs();
+  if(prefs.wake) wake(true).then(function(ok){ if(!ok){ prefs.wake=false; savePrefs(); syncPrefs(); } });
+  render();
+})();
+</script>
+</body>
+</html>
